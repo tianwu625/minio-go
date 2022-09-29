@@ -124,7 +124,7 @@ type ObjectInfo struct {
 	Owner Owner
 
 	// ACL grant.
-	Grant []Grant
+	Grant []GrantDecode
 
 	// The class of storage used to store the object.
 	StorageClass string `json:"storageClass"`
