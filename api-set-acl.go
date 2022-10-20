@@ -2,10 +2,10 @@ package minio
 
 import (
 	"context"
+	"encoding/xml"
 	"net/http"
 	"net/url"
 	"strings"
-	"encoding/xml"
 )
 
 type GranteeEncode struct {
@@ -35,6 +35,14 @@ type AccessControlPolicyEncode struct {
 	} `xml:"AccessControlList" json:"AccessControlList"`
 }
 
+func (c *Client) PutObjectAcl(ctx context.Context, bucketName, objectName string, acle *AccessControlPolicyEncode) error {
+	aclstring, err := xml.Marshal(acle)
+	if err != nil {
+		return err
+	}
+	return c.PutObjectACLstring(ctx, bucketName, objectName, string(aclstring))
+}
+
 // GetObjectACL get object ACLs
 func (c *Client) PutObjectACLstring(ctx context.Context, bucketName, objectName, acl string) error {
 	resp, err := c.executeMethod(ctx, http.MethodPut, requestMetadata{
@@ -43,7 +51,7 @@ func (c *Client) PutObjectACLstring(ctx context.Context, bucketName, objectName,
 		queryValues: url.Values{
 			"acl": []string{""},
 		},
-		contentBody: strings.NewReader(acl),
+		contentBody:   strings.NewReader(acl),
 		contentLength: int64(len(acl)),
 	})
 	if err != nil {
@@ -57,13 +65,22 @@ func (c *Client) PutObjectACLstring(ctx context.Context, bucketName, objectName,
 	return nil
 }
 
+func (c *Client) PutBucketAcl(ctx context.Context, bucketName string, acle *AccessControlPolicyEncode) error {
+	aclstring, err := xml.Marshal(acle)
+	if err != nil {
+		return err
+	}
+
+	return c.PutBucketACLstring(ctx, bucketName, string(aclstring))
+}
+
 func (c *Client) PutBucketACLstring(ctx context.Context, bucketName, acl string) error {
 	resp, err := c.executeMethod(ctx, http.MethodPut, requestMetadata{
 		bucketName: bucketName,
 		queryValues: url.Values{
 			"acl": []string{""},
 		},
-		contentBody: strings.NewReader(acl),
+		contentBody:   strings.NewReader(acl),
 		contentLength: int64(len(acl)),
 	})
 	if err != nil {

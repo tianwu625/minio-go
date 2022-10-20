@@ -20,9 +20,9 @@ package minio
 import (
 	"context"
 	"encoding/xml"
+	"io"
 	"net/http"
 	"net/url"
-	"io"
 )
 
 type GranteeDecode struct {
@@ -147,6 +147,19 @@ func getAmzGrantACL(aCPolicy *AccessControlPolicyDecode) map[string][]string {
 	return res
 }
 
+func (c *Client) GetObjectAcl(ctx context.Context, bucketName, objectName string) (*AccessControlPolicyDecode, error) {
+	aclstring, err := c.GetObjectACLstring(ctx, bucketName, objectName)
+	if err != nil {
+		return nil, err
+	}
+	acld := AccessControlPolicyDecode{}
+	err = xml.Unmarshal([]byte(aclstring), &acld)
+	if err != nil {
+		return nil, err
+	}
+	return &acld, nil
+}
+
 func (c *Client) GetObjectACLstring(ctx context.Context, bucketName, objectName string) (string, error) {
 	resp, err := c.executeMethod(ctx, http.MethodGet, requestMetadata{
 		bucketName: bucketName,
@@ -167,7 +180,22 @@ func (c *Client) GetObjectACLstring(ctx context.Context, bucketName, objectName 
 	return string(aclBytes), nil
 }
 
-func (c *Client) GetBucketACLstring(ctx context.Context, bucketName string)(string, error) {
+func (c *Client) GetBucketAcl(ctx context.Context, bucketName string) (*AccessControlPolicyDecode, error) {
+	aclstring, err := c.GetBucketACLstring(ctx, bucketName)
+	if err != nil {
+		return nil, err
+	}
+	acld := AccessControlPolicyDecode{}
+	err = xml.Unmarshal([]byte(aclstring), &acld)
+	if err != nil {
+		return nil, err
+	}
+
+	return &acld, nil
+
+}
+
+func (c *Client) GetBucketACLstring(ctx context.Context, bucketName string) (string, error) {
 	resp, err := c.executeMethod(ctx, http.MethodGet, requestMetadata{
 		bucketName: bucketName,
 		queryValues: url.Values{
